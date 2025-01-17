@@ -1,0 +1,12 @@
+{{- if .Values.weaviate.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-weaviate-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.weaviate.persistence.size }}
+{{- end }} 

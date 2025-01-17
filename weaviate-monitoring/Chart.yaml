@@ -1,0 +1,12 @@
+apiVersion: v2
+name: weaviate-monitoring
+description: A Helm chart for Weaviate with Prometheus and Grafana monitoring
+version: 0.1.0
+type: application
+dependencies:
+  - name: prometheus
+    version: "15.10.1"
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    version: "6.32.2"
+    repository: https://grafana.github.io/helm-charts 

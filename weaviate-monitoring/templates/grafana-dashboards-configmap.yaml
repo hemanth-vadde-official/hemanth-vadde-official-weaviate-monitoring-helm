@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  labels:
+    grafana_dashboard: "true"
+data:
+  usage.json: |-
+{{ .Files.Get "dashboards/usage.json" | indent 4 }}
+  objects.json: |-
+{{ .Files.Get "dashboards/objects.json" | indent 4 }}
+  importing.json: |-
+{{ .Files.Get "dashboards/importing.json" | indent 4 }}
+  startup.json: |-
+{{ .Files.Get "dashboards/startup.json" | indent 4 }}
+  vectorindex.json: |-
+{{ .Files.Get "dashboards/vectorindex.json" | indent 4 }} 

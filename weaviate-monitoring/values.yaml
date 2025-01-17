@@ -1,0 +1,62 @@
+weaviate:
+  image:
+    repository: semitechnologies/weaviate
+    tag: 1.14.1
+  service:
+    type: ClusterIP
+    port: 8080
+  persistence:
+    enabled: true
+    size: 10Gi
+  env:
+    PROMETHEUS_MONITORING_ENABLED: "true"
+    QUERY_DEFAULTS_LIMIT: "25"
+    AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+    PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+    DEFAULT_VECTORIZER_MODULE: "none"
+    ENABLE_MODULES: ""
+    CLUSTER_HOSTNAME: "node1"
+
+prometheus:
+  server:
+    persistentVolume:
+      enabled: true
+      size: 8Gi
+  serverFiles:
+    prometheus.yml:
+      scrape_configs:
+        - job_name: weaviate
+          scrape_interval: 2s
+          static_configs:
+            - targets:
+                - weaviate:2112
+
+grafana:
+  persistence:
+    enabled: true
+    size: 5Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://{{ .Release.Name }}-prometheus-server
+          access: proxy
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'weaviate'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: true
+          editable: false
+          options:
+            path: /var/lib/grafana/dashboards
+  dashboardsConfigMaps:
+    - configMapName: grafana-dashboards
+  adminUser: weaviate
+  adminPassword: weaviate 
