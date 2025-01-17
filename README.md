@@ -1,40 +1,120 @@
 # Weaviate with Prometheus Monitoring & Grafana Dashboards
+# Weaviate, Prometheus, and Grafana Setup Guide
 
-This setup contains a `docker-compose.yml` that spins up Weaviate (without any
-modules), a Prometheus instance, and a Grafana instance. Weaviate is configured
-to expose Prometheus-metrics. The Prometheus instance is configured to scrape
-those metrics from Weaviate. Finally, the Grafana instance is configured to use
-the Prometheus instance as a datasource, and uses a dashboard provider to
-include some sample dashboards.
+This guide provides step-by-step instructions for deploying and configuring Weaviate, Prometheus, and Grafana on a Kubernetes cluster.
 
-## How to use
+## Prerequisites
+- Kubernetes cluster
+- kubectl configured to interact with your cluster
+- Helm installed
 
+## Deploying Weaviate
 
-### Step 1: Spin everything up
+1. **Clone the Weaviate Helm Chart**
+   ```bash
+   git clone https://github.com/semi-technologies/weaviate-helm.git
+   cd weaviate-helm
+   ```
 
-Spin up everything using `docker-compose up -d`. You can check if weaviate is
-running by querying the API root (`curl localhost:8080/v1`).
+2. **Install Weaviate using Helm**
+   ```bash
+   helm install weaviate ./weaviate
+   ```
 
-### Step 2: Use Weaviate normally
+3. **Apply the HTTP and gRPC Services**
+   ```bash
+   kubectl apply -f weaviate-http-service.yaml
+   kubectl apply -f weaviate-grpc-service.yaml
+   ```
 
-In order to view metrics on the dashboards, you need to create some usage.
-Ideally you will use Weaviate as you would normally use it in this step. As a
-very minimal example, we can import two objects using the `/v1/batch` API:
+4. **Verify the Services**
+   ```bash
+   kubectl get svc weaviate-http weaviate-grpc
+   ```
 
-```sh
-curl localhost:8080/v1/batch/objects -H 'content-type:application/json' -d '{"objects":[
-  {"class": "Example", "vector": [0.1, 0.3], "properties":{"text": "This is the first object"}},
-  {"class": "Example", "vector": [0.01, 0.7], "properties":{"text": "This is another object"}}
-]}'
-```
+## Deploying Prometheus
 
-### Step 3: Open Grafana in the browser
+1. **Add the Prometheus Helm Repository**
+   ```bash
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo update
+   ```
 
-1. Open your Browser at `localhost:3000`
-2. Log into the Grafana instance using `weaviate`/`weaviate`.
-3. Select one of the sample dashboards, such as "Importing Data Into Weaviate".
+2. **Install Prometheus**
+   ```bash
+   helm install prometheus prometheus-community/prometheus
+   ```
 
-You should now see some metrics on this dashboard.
+3. **Verify Prometheus Installation**
+   ```bash
+   kubectl get pods -l app=prometheus
+   ```
+
+## Deploying Grafana
+
+1. **Add the Grafana Helm Repository**
+   ```bash
+   helm repo add grafana https://grafana.github.io/helm-charts
+   helm repo update
+   ```
+
+2. **Install Grafana**
+   ```bash
+   helm install grafana grafana/grafana
+   ```
+
+3. **Get Grafana Admin Password**
+   ```bash
+   kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+   ```
+
+4. **Access Grafana**
+   - Forward the Grafana service to your local machine:
+     ```bash
+     kubectl port-forward svc/grafana 3000:80
+     ```
+   - Open your browser and go to `http://localhost:3000`
+   - Login with username `admin` and the password retrieved above
+
+## Configuring Grafana
+
+1. **Add Prometheus as a Data Source**
+   - Go to Grafana UI -> Configuration -> Data Sources -> Add data source
+   - Select Prometheus
+   - Set the URL to `http://prometheus-server`
+   - Save & Test
+
+2. **Import Dashboards**
+   - Go to Grafana UI -> Dashboards -> Import
+   - Paste the JSON configuration for the Weaviate dashboard
+   - Select Prometheus as the data source
+
+## Inserting Data into Weaviate
+
+1. **Install Python Requirements**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the Data Insertion Script**
+   ```bash
+   python insert_data.py
+   ```
+
+3. **Verify Data Insertion**
+   - Use the Weaviate console or API to query the inserted data
+
+## Monitoring and Verification
+
+- Use Grafana to monitor Weaviate's performance and operations
+- Use Prometheus queries to explore specific metrics
+
+## Additional Configurations
+- Modify service configurations as needed for your environment
+- Scale the setup by adding more classes, data, and monitoring dashboards
+
+For further customization or specific requirements, feel free to reach out for assistance!
+
 
 
 
